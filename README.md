@@ -23,3 +23,5 @@ To Reflect what i learned and what, was improved on the Dashboard with each LO /
 Navigate to the specific directories (`LE1`, `LE2`, etc.) to access and interact with the learning materials and exercises.
 
 For more detailed information, please refer to the specific README files within each directory, if available.
+
+Video of Dashboard: https://github.com/etiiiR/FHNW_IVI_2023/raw/main/Recording%202023-12-27%20222502.mp4
