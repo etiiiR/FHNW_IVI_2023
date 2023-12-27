@@ -124,6 +124,14 @@ sidebar = html.Div(
             n_clicks=0,
             style={"margin-top": "20px", 'background-color': '#222', 'border-color': '#444', 'color': 'white'},
         ),
+        html.H5(
+            "Klicken Sie auf eine Fahrt (grüner oder roter Punkt), um Details anzuzeigen",
+            style={"margin-top": "5vh"},
+        ),
+        html.H5(
+            "Die Grösse der Punkte zeigt den Fahrpreis an.",
+            style={"margin-top": "20px"},
+        ),
     ],
     style={"grid-area": "sidebar", "padding": "10px", "color": "white"},
 )
