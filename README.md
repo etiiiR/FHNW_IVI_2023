@@ -15,7 +15,8 @@ pip install -r requirements.txt
 - `requirements.txt`: Lists all Python dependencies for the projects.
 
 ## Dashboard:
-- The Dashboard is in the Uber_v<<int:version>>.py Every Version was a step by Step in the process of the IVI Paper. To Reflect what i learned and what, was improved on the Dashboard with each LO / LE.
+- The Dashboard is in the Uber_v<<int:version>>.py. Every Version was a step by Step in the process of the IVI Paper.
+To Reflect what i learned and what, was improved on the Dashboard with each LO / LE.
 
 
 ## Usage Instructions
