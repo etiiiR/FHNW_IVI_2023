@@ -1,4 +1,3 @@
-
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -14,8 +13,13 @@ mapbox_access_token = "pk.eyJ1IjoiZXRpaWlyIiwiYSI6ImNscW1pdThvYjJyZmoyanJxMWN4YT
 folder_path = os.path.dirname(os.path.realpath(__file__))
 uber_df = pd.read_csv(folder_path + "\\data\\uber.csv").head(50)
 synthetic_car_df = pd.read_csv(folder_path + "\\data\\synthetic_car_data.csv")
-
+# round the ratings to integers
+uber_df["Rating"] = uber_df["Rating"].round()
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+
+style_dropdown = {"color": "white", "background-color": "#222", "border-color": "#444"}
+
+style_rangeslider = {"color": "white", "background-color": "#222"}
 
 detail_modal = dbc.Modal(
     [
@@ -35,7 +39,8 @@ def dark_mode_figure(df, x, y, color, title):
     fig.update_layout(template="plotly_dark")
     return fig
 
-def dark_mode_histogram(df, x, title ):
+
+def dark_mode_histogram(df, x, title):
     fig = px.histogram(df, x=x, title=title)
     fig.update_layout(template="plotly_dark")
     return fig
@@ -44,13 +49,17 @@ def dark_mode_histogram(df, x, title ):
 sidebar = html.Div(
     [
         html.H2("Filter", style={"textAlign": "center"}),
+        html.Label("Uber Typ", style={"font-weight": "bold", "margin-top": "10px"}),
         dcc.Dropdown(
             id="uber-type-dropdown",
-            options=[{"label": "Alle", "value": "Alle"}]
-            + [{"label": str(i), "value": i} for i in uber_df["Uber Type"].unique()],
-            value="Alle",
-            style={"margin-bottom": "20px", "transform": "scale(1.0), z-index: 1000"},
+            options=[
+                {"label": str(i), "value": i} for i in uber_df["Uber Type"].unique()
+            ],
+            value=[1, 2, 0],
+            multi=True,
+            style=style_dropdown,
         ),
+        html.Label("Kosten", style={"font-weight": "bold", "margin-top": "10px"}),
         dcc.RangeSlider(
             id="fare-range-slider",
             min=uber_df["Fare$"].min(),
@@ -64,6 +73,7 @@ sidebar = html.Div(
             },
             value=[uber_df["Fare$"].min(), uber_df["Fare$"].max()],
         ),
+        html.Label("Strecke", style={"font-weight": "bold", "margin-top": "10px"}),
         dcc.RangeSlider(
             id="distance-range-slider",
             min=uber_df["Journey Distance(m)"].min(),
@@ -78,6 +88,9 @@ sidebar = html.Div(
                 uber_df["Journey Distance(m)"].max(),
             ],
         ),
+        html.Label(
+            "Datum der Fahrt", style={"font-weight": "bold", "margin-top": "10px"}
+        ),
         dcc.DatePickerRange(
             id="departure-date-picker",
             min_date_allowed=uber_df["Departure Date"].min(),
@@ -89,16 +102,28 @@ sidebar = html.Div(
                 "transform": "scale(1.0)",
                 "transform-origin": "left center",
                 "width": "100%",
+                "color": "white",
+                "background-color": "#222",
+                "border-color": "#444",
+                "z-index": "1000",
             },
         ),
         html.Label("Bewertung", style={"font-weight": "bold", "margin-top": "10px"}),
-            dcc.Dropdown(
-                id="rating-dropdown",
-                options=[{"label": str(i), "value": i} for i in range(1, 6, 1)],
-                value=None,  # Standardwert ist keine Auswahl
-                multi=True,  # Ermöglicht die Auswahl mehrerer Optionen
-                placeholder="Wählen Sie Bewertungen",
-            ),
+        dcc.Dropdown(
+            id="rating-dropdown",
+            options=[1, 2, 3, 4, 5],
+            value=[1, 2, 3, 4, 5],  # Standardwert ist keine Auswahl
+            multi=True,
+            style=style_dropdown,
+            # Ermöglicht die Auswahl mehrerer Optionen
+            placeholder="Wählen Sie Bewertungen",
+        ),
+        html.Button(
+            "Filter zurücksetzen",
+            id="reset-button",
+            n_clicks=0,
+            style={"margin-top": "20px", 'background-color': '#222', 'border-color': '#444', 'color': 'white'},
+        ),
     ],
     style={"grid-area": "sidebar", "padding": "10px", "color": "white"},
 )
@@ -107,9 +132,15 @@ main_content = html.Div(
     [
         html.H1(
             "Deine Uber Fahrten",
-            style={"textAlign": "center", "font-size": "30px", "font-weight": "bold", 'padding-top': "20px", 'padding-bottom': "20px"},
+            style={
+                "textAlign": "center",
+                "font-size": "30px",
+                "font-weight": "bold",
+                "padding-top": "20px",
+                "padding-bottom": "20px",
+            },
         ),
-        dcc.Graph(id="map-plot", style={"height": "60vh", 'border-radius': '30px'} ),
+        dcc.Graph(id="map-plot", style={"height": "60vh", "border-radius": "30px"}),
         html.Div(
             [
                 dcc.Graph(
@@ -150,9 +181,6 @@ app.layout = html.Div(
         "background-color": "#343a40",
     },
 )
-
-
-
 
 
 @app.callback(
@@ -226,60 +254,103 @@ def marker_size_based_on_price(price):
 # Callback zur Aktualisierung aller Filteroptionen basierend auf aktuellen Filtern
 @app.callback(
     [
-        Output('uber-type-dropdown', 'options'),
-        Output('fare-range-slider', 'min'),
-        Output('fare-range-slider', 'max'),
-        Output('fare-range-slider', 'marks'),
-        Output('fare-range-slider', 'value'),
-        Output('distance-range-slider', 'min'),
-        Output('distance-range-slider', 'max'),
-        Output('distance-range-slider', 'marks'),
-        Output('distance-range-slider', 'value'),
-        Output('rating-dropdown', 'options'),
-        Output('map-plot', 'figure'),
-        Output('fare_histogram', 'figure'),
-        Output('distance_scatter', 'figure')
+        Output("uber-type-dropdown", "options"),
+        Output("fare-range-slider", "min"),
+        Output("fare-range-slider", "max"),
+        Output("fare-range-slider", "marks"),
+        Output("fare-range-slider", "value"),
+        Output("distance-range-slider", "min"),
+        Output("distance-range-slider", "max"),
+        Output("distance-range-slider", "marks"),
+        Output("distance-range-slider", "value"),
+        Output("rating-dropdown", "options"),
+        Output("map-plot", "figure"),
+        Output("fare_histogram", "figure"),
+        Output("distance_scatter", "figure"),
     ],
     [
-        Input('uber-type-dropdown', 'value'),
-        Input('fare-range-slider', 'value'),
-        Input('distance-range-slider', 'value'),
-        Input('departure-date-picker', 'start_date'),
-        Input('departure-date-picker', 'end_date'),
-        Input('rating-dropdown', 'value')
-    ]
+        Input("uber-type-dropdown", "value"),
+        Input("fare-range-slider", "value"),
+        Input("distance-range-slider", "value"),
+        Input("departure-date-picker", "start_date"),
+        Input("departure-date-picker", "end_date"),
+        Input("rating-dropdown", "value"),
+        Input("reset-button", "n_clicks"),
+    ],
 )
-def update_all_filters(uber_type, fare_range, distance_range, start_date, end_date, ratings):
+def update_all_filters(
+    uber_type, fare_range, distance_range, start_date, end_date, ratings, reset_button
+):
     # Filtern der Daten basierend auf den ausgewählten Filteroptionen
     filtered_df = uber_df.copy()
-    if uber_type != 'Alle':
-        filtered_df = filtered_df[filtered_df['Uber Type'] == uber_type]
+
+    if callback_context.triggered[0]["prop_id"] == "reset-button.n_clicks":
+        fare_range = [uber_df["Fare$"].min(), uber_df["Fare$"].max()]
+        distance_range = [
+            uber_df["Journey Distance(m)"].min(),
+            uber_df["Journey Distance(m)"].max(),
+        ]
+        start_date = uber_df["Departure Date"].min()
+        end_date = uber_df["Departure Date"].max()
+        filtered_df = uber_df.copy()
+
+    if uber_type:
+        filtered_df = filtered_df[filtered_df["Uber Type"].isin(uber_type)]
     if ratings:
-        filtered_df = filtered_df[filtered_df['Rating'].isin(ratings)]
+        filtered_df = filtered_df[filtered_df["Rating"].isin(ratings)]
+
     filtered_df = filtered_df[
-        (filtered_df['Fare$'] >= fare_range[0]) & (filtered_df['Fare$'] <= fare_range[1]) &
-        (filtered_df['Journey Distance(m)'] >= distance_range[0]) & (filtered_df['Journey Distance(m)'] <= distance_range[1])
+        (filtered_df["Fare$"] >= fare_range[0])
+        & (filtered_df["Fare$"] <= fare_range[1])
+        & (filtered_df["Journey Distance(m)"] >= distance_range[0])
+        & (filtered_df["Journey Distance(m)"] <= distance_range[1])
     ]
     if start_date is not None and end_date is not None:
         filtered_df = filtered_df[
-            (filtered_df['Departure Date'] >= start_date) &
-            (filtered_df['Departure Date'] <= end_date)
+            (filtered_df["Departure Date"] >= start_date)
+            & (filtered_df["Departure Date"] <= end_date)
         ]
 
     # Aktualisieren der Filteroptionen und -werte basierend auf gefilterten Daten
-    uber_type_options = [{"label": str(i), "value": i} for i in filtered_df['Uber Type'].unique()]
-    fare_min, fare_max = filtered_df['Fare$'].min(), filtered_df['Fare$'].max()
-    fare_marks = {i: f'${i}' for i in range(int(fare_min), int(fare_max) + 1, 300)}
-    distance_min, distance_max = filtered_df['Journey Distance(m)'].min(), filtered_df['Journey Distance(m)'].max()
-    distance_marks = {i: f'{i}m' for i in range(0, int(distance_max) + 1, 10000)}
+    uber_type_options = [
+        {"label": str(i), "value": i} for i in uber_df["Uber Type"].unique()
+    ]
+    fare_min, fare_max = filtered_df["Fare$"].min(), filtered_df["Fare$"].max()
+    fare_marks = {i: f"${i}" for i in range(int(fare_min), int(fare_max) + 1, 300)}
+    distance_min, distance_max = (
+        filtered_df["Journey Distance(m)"].min(),
+        filtered_df["Journey Distance(m)"].max(),
+    )
+    distance_marks = {i: f"{i}m" for i in range(0, int(distance_max) + 1, 10000)}
     rating_options = [{"label": str(i), "value": i} for i in range(1, 6, 1)]
 
     # Erstellen der Plotly-Figuren basierend auf den gefilterten Daten
     map_fig = update_map_figure(filtered_df)
     hist_fig = dark_mode_histogram(filtered_df, "Fare$", "Verteilung der Fahrpreise")
-    scatter_fig = dark_mode_figure(filtered_df, "Fare$", "Journey Distance(m)", "Uber Type", "Fahrpreis vs. Reiseentfernung")
+    scatter_fig = dark_mode_figure(
+        filtered_df,
+        "Fare$",
+        "Journey Distance(m)",
+        "Uber Type",
+        "Fahrpreis vs. Reiseentfernung",
+    )
 
-    return uber_type_options, fare_min, fare_max, fare_marks, [fare_min, fare_max], distance_min, distance_max, distance_marks, [distance_min, distance_max], rating_options, map_fig, hist_fig, scatter_fig
+    return (
+        uber_type_options,
+        fare_min,
+        fare_max,
+        fare_marks,
+        [fare_min, fare_max],
+        distance_min,
+        distance_max,
+        distance_marks,
+        [distance_min, distance_max],
+        rating_options,
+        map_fig,
+        hist_fig,
+        scatter_fig,
+    )
+
 
 # Funktion zum Erstellen der Kartenfigur
 def update_map_figure(df):
@@ -295,19 +366,37 @@ def update_map_figure(df):
                 line=dict(width=2, color="blue"),
                 hoverinfo="text",
                 text=create_hover_info(row),
-                name=legend_label
+                name=legend_label,  # Legendenbeschriftung
             )
         )
-        # Größe der Marker basierend auf dem Fahrpreis
-        marker_size = marker_size_based_on_price(row["Fare$"])
+
+        # Größe der Marker basierend auf dem Fahrpreis bestimmen
+        origin_marker_size = marker_size_based_on_price(row["Fare$"])
+        destination_marker_size = marker_size_based_on_price(row["Fare$"])
+
+        # Hinzufügen des Abfahrtspunkts (Origin) mit dynamischer Größe
         fig.add_trace(
             go.Scattermapbox(
-                lon=[row["Origin Longitude"], row["Destination Longitude"]],
-                lat=[row["Origin Latitude"], row["Destination Latitude"]],
+                lon=[row["Origin Longitude"]],
+                lat=[row["Origin Latitude"]],
                 mode="markers",
-                marker=dict(size=marker_size, color=["green", "red"]),
+                marker=dict(size=origin_marker_size, color="green"),
                 hoverinfo="text",
-                text=create_hover_info(row)
+                text=create_hover_info(row),
+                name="Ziel",  # Legendenbeschriftung
+            )
+        )
+
+        # Hinzufügen des Ankunftspunkts (Destination) mit dynamischer Größe
+        fig.add_trace(
+            go.Scattermapbox(
+                lon=[row["Destination Longitude"]],
+                lat=[row["Destination Latitude"]],
+                mode="markers",
+                marker=dict(size=destination_marker_size, color="red"),
+                hoverinfo="text",
+                text=create_hover_info(row),
+                name="Abfahrt",  # Legendenbeschriftung
             )
         )
     # Kartenansicht konfigurieren
@@ -316,13 +405,13 @@ def update_map_figure(df):
             accesstoken=mapbox_access_token,
             style="mapbox://styles/mapbox/dark-v11",
             center=go.layout.mapbox.Center(lat=-37.8136, lon=144.9631),
-            zoom=9
+            zoom=9,
         ),
         margin=dict(l=0, r=0, t=0, b=0),
-        showlegend=True
+        showlegend=True,
     )
     return fig
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)

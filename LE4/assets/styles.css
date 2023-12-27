@@ -1,0 +1,60 @@
+/* Ändern des Hintergrunds des Dropdown-Menüs */
+.VirtualizedSelectOption {
+    background-color: #333 !important;
+    color: white !important;
+}
+
+/* Ändern des Hintergrunds des Dropdown-Menüs beim Überfahren mit der Maus */
+.VirtualizedSelectFocusedOption {
+    background-color: #444 !important;
+    color: white !important;
+}
+
+/* Ändern des Hintergrunds des Dropdown-Menüs beim Auswählen */
+.VirtualizedSelectOption:active {
+    background-color: #555 !important;
+    color: white !important;
+}
+
+.DateInput_input {
+    color: white;
+    background-color: #222;
+    border-bottom-color: #444;
+}
+
+.CalendarDay {
+    border-color: #444;
+}
+
+.CalendarDay__selected {
+    background-color: #444;
+    border: 1px double #444;
+}
+
+.CalendarDay__selected:hover {
+    background-color: #555;
+    border: 1px double #555;
+}
+
+.CalendarDay__hovered_span:hover {
+    background-color: #555;
+    border: 1px double #555;
+}
+
+.CalendarDay__hovered_span {
+    background-color: #555;
+    border: 1px double #555;
+}
+
+.CalendarDay__selected_span {
+    background-color: #444;
+    border: 1px double #444;
+}
+
+.DateRangePickerInput {
+    background-color: #222;
+}
+.infolayer {
+    background-color: #222;
+    border: 1px solid #444;
+}

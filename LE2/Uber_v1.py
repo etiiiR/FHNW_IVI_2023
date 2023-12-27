@@ -75,7 +75,7 @@ def generate_synthetic_uber_data(num_rows):
     return pd.DataFrame(synthetic_data, columns=columns)
 
 # Daten generieren
-uber_df = generate_synthetic_uber_data(1000)
+#uber_df = generate_synthetic_uber_data(1000)
 
 # Layout der App
 app.layout = html.Div([
