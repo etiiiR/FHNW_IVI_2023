@@ -20,12 +20,15 @@ import plotly.express as px
 import datashader as ds
 from colorcet import fire
 import datashader.transfer_functions as tf
+import matplotlib.pyplot as plt
+
+
 
 # %%
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/uber-rides-data1.csv')
 dff = df.query('Lat < 40.82').query('Lat > 40.70').query('Lon > -74.02').query('Lon < -73.91')
 
-import datashader as ds
+
 cvs = ds.Canvas(plot_width=1000, plot_height=1000)
 agg = cvs.points(dff, x='Lon', y='Lat')
 # agg is an xarray object, see http://xarray.pydata.org/en/stable/ for more details
@@ -36,11 +39,9 @@ coordinates = [[coords_lon[0], coords_lat[0]],
                [coords_lon[-1], coords_lat[-1]],
                [coords_lon[0], coords_lat[-1]]]
 
-from colorcet import fire
-import datashader.transfer_functions as tf
+
 img = tf.shade(agg, cmap=fire)[::-1].to_pil()
 
-import plotly.express as px
 # Trick to create rapidly a figure with mapbox axes
 fig = px.scatter_mapbox(dff[:1], lat='Lat', lon='Lon', zoom=12)
 # Add the datashader image as a mapbox layer image
@@ -56,8 +57,6 @@ fig.update_layout(mapbox_style="carto-darkmatter",
 fig.write_html("uber_nyc.html")
 
 # %%
-import pandas as pd
-import plotly.express as px
 
 # Load the data
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/uber-rides-data1.csv')
@@ -128,15 +127,10 @@ def benchmark_rendering(df, zoom_level, width=500, height=500):
 
     end_time = time.time()
     return end_time - start_time  # Return the time taken to simulate rendering
-
-
-
-
-
-
-
 # %%
 # Benchmark performance at different zoom levels
+print("Benchmarking performance at different zoom levels...")
+print("Width: 500, Height: 500")
 zoom_levels = [5, 8, 10, 12, 15]
 for zoom in zoom_levels:
     time_taken = benchmark_rendering(df, zoom)
@@ -144,6 +138,7 @@ for zoom in zoom_levels:
 
 # %%
 # Benchmark performance at different zoom levels
+print("width: 10000, height: 10000")
 zoom_levels = [5, 8, 10, 12, 15]
 for zoom in zoom_levels:
     time_taken = benchmark_rendering(df, zoom, width=10000, height=10000)
@@ -166,6 +161,8 @@ def benchmark_plotly_rendering(df, zoom, width=500, height=500):
     return end_time - start_time  # Return the time taken for this rendering approach
 
 # Benchmark performance at different zoom levels
+print("Benchmarking performance at different zoom levels...")
+print('With Plotly native scatter')
 zoom_levels = [5, 8, 10, 12, 15]
 for zoom in zoom_levels:
     time_taken = benchmark_plotly_rendering(df, zoom)
@@ -173,6 +170,7 @@ for zoom in zoom_levels:
 
 # %%
 # Data size benchmarks
+print("Benchmarking performance with different data sizes...")
 fractions = [0.01, 0.05, 0.1, 0.5, 1]  # Fractions of the original data size to use in the benchmark
 for fraction in fractions:
     time_taken = benchmark_data_size(df, fraction)
@@ -181,6 +179,8 @@ for fraction in fractions:
 
 # %%
 # Benchmark rendering with actual larger datasets by duplicating the dataframe
+
+print("Benchmarking performance with larger datasets...")
 multiples = [1, 2, 5, 10, 100, 1000]  # Multiples of the original data size
 for multiple in multiples:
     # Concatenate the dataframe to itself 'multiple' times
@@ -189,7 +189,6 @@ for multiple in multiples:
     data_size = len(larger_df)
     print(f"Time taken to render with {data_size} data points (multiple: {multiple}): {time_taken:.4f} seconds")
     # plot the time taken to render with data size
-import matplotlib.pyplot as plt
 plt.plot([len(df) * multiple for multiple in multiples], [benchmark_data_size(pd.concat([df] * multiple), 1) for multiple in multiples])
 plt.xlabel('Data size')
 plt.ylabel('Time (seconds)')
@@ -198,13 +197,6 @@ plt.show()
 
 
 # %%
-import pandas as pd
-import numpy as np
-import time
-import matplotlib.pyplot as plt
-import datashader as ds
-import datashader.transfer_functions as tf
-
 # Load the dataset
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/uber-rides-data1.csv')
 
@@ -235,7 +227,6 @@ print(f"Datashader rendering time: {datashader_time:.4f} seconds")
 
 ## %%
 # plot the matplotlib vs datashader rendering times
-import matplotlib.pyplot as plt
 plt.bar(['Matplotlib', 'Datashader'], [matplotlib_time, datashader_time])
 plt.ylabel('Time (seconds)')
 plt.title('Matplotlib vs Datashader rendering times')
